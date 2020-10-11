@@ -1,4 +1,4 @@
-import {H5P } from 'h5p-standalone';
+import {H5P } from 'h5p-standalone-fix';
 import TinCan from 'tincanjs';	
 import URL from 'url';
 
@@ -17,8 +17,8 @@ H5PxApiSender.init = async () => {
     H5PxApiSender.setupLrs();
     const options = {
         id: URL.parse(location.href, true).query.activity_id,
-        frameJs: '../node_modules/h5p-standalone/dist/frame.bundle.js',
-        frameCss: '../node_modules/h5p-standalone/dist/styles/h5p.css'
+        frameJs: '../node_modules/h5p-standalone-fix/dist/frame.bundle.js',
+        frameCss: '../node_modules/h5p-standalone-fix/dist/styles/h5p.css'
     },container = document.getElementById('h5p-container'),
     h5pStandAlone = await new H5P(container, container.getAttribute('data-workspace')|| 'workspace', options);
     h5pStandAlone.H5P.externalDispatcher.on('xAPI',  (event) => {
