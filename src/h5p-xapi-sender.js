@@ -57,19 +57,21 @@ H5PxApiSender.handleContextParent = (parents) => {
 H5PxApiSender.sendStatement = (event) => {
     if(H5PxApiSender.lrs && H5PxApiSender.params){
         const h5pStatement = event.data.statement, activityId = H5PxApiSender.params.activity_id,
-        parent = h5pStatement.context.contextActivities.parent, mObject = h5pStatement.object,
-        subIdKey = 'http://h5p.org/x-api/h5p-subContentId',hasSubId = mObject.definition 
-        && mObject.definition.extensions && mObject.definition.extensions[subIdKey],
+        hasContext = h5pStatement.context && h5pStatement.context.contextActivities,
+        hasParent = hasContext && h5pStatement.context.contextActivities.parent,
+        parent = hasParent ? h5pStatement.context.contextActivities.parent: {},
+        contextActivities = hasContext && hasParent ? {...h5pStatement.context.contextActivities}:{},
+        mObject = h5pStatement.object, subIdKey = 'http://h5p.org/x-api/h5p-subContentId',
+        hasSubId = mObject.definition && mObject.definition.extensions && mObject.definition.extensions[subIdKey],
         statement = {
             actor: H5PxApiSender._actor,
             verb: h5pStatement.verb,
             object: {...mObject, id: hasSubId ? `${activityId}/${mObject.definition.extensions[subIdKey]}`:activityId},
             result: h5pStatement.result,
             context: {...h5pStatement.context, registration: H5PxApiSender.params.registration,
-                 contextActivities: 'parent' in h5pStatement.context.contextActivities ? 
-                 {...h5pStatement.context.contextActivities, parent: parent ?
-                     H5PxApiSender.handleContextParent(parent): activityId}: 
-                 {...h5pStatement.context.contextActivities}},
+                 contextActivities: {...contextActivities,parent: hasParent ?
+                    H5PxApiSender.handleContextParent(parent): activityId}
+                },
             timestamp: new Date().toISOString()
         },tinCanStatement = TinCan.Statement.fromJSON(JSON.stringify(statement));
         H5PxApiSender.lrs.saveStatement(tinCanStatement, {
