@@ -2,7 +2,6 @@ import {H5P } from 'h5p-standalone-fix';
 import TinCan from 'tincanjs';
 import path from 'path';	
 import URL from 'url';
-import fs from 'fs-extra';
 
 
 const H5PxApiSender = {};
@@ -17,17 +16,16 @@ H5PxApiSender.lrs = null;
  */
 H5PxApiSender.init = async () => {
     H5PxApiSender.setupLrs();
-    console.log("path",__dirname,fs.pathExistsSync(path.resolve(__dirname,'dist/frame.bundle.js')))
-    const options = {
+    const container = document.getElementById('h5p-container'),
+    resPath = container.getAttribute('data-path') || '',options = {
         id: URL.parse(location.href, true).query.activity_id,
-        frameJs: path.resolve(__dirname,'dist/frame.bundle.js'),
-        frameCss: path.resolve(__dirname,'dist/styles/h5p.css')
-    },container = document.getElementById('h5p-container'),
+        frameJs: `${resPath}dist/frame.bundle.js`,
+        frameCss: `${resPath}dist/styles/h5p.css`
+    },
     h5pStandAlone = await new H5P(container, container.getAttribute('data-workspace')|| 'workspace', options);
     h5pStandAlone.H5P.externalDispatcher.on('xAPI',  (event) => {
         H5PxApiSender.sendStatement(event)
     });
-    console.log(h5pStandAlone)
 }
 
 H5PxApiSender.setupLrs = () => {
@@ -82,7 +80,7 @@ H5PxApiSender.sendStatement = (event) => {
         H5PxApiSender.lrs.saveStatement(tinCanStatement, {
             callback: (err,xhr) => {
                 if(err != null) {
-                     console.log("Failed to save statement: " + err);
+                     console.log(`Failed to save statement: ${err}`);
                 }else {
                      console.log("Saved OK");
                 }
@@ -95,8 +93,7 @@ H5PxApiSender.sendStatement = (event) => {
 
 
 //Listen for the document load ready and initialize H5PxApiSender
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("Event received loader completed") 
+document.addEventListener("DOMContentLoaded", () => { 
     H5PxApiSender.init()
 });
 
