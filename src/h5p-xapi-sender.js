@@ -1,6 +1,8 @@
 import {H5P } from 'h5p-standalone-fix';
-import TinCan from 'tincanjs';	
+import TinCan from 'tincanjs';
+import path from 'path';	
 import URL from 'url';
+import fs from 'fs-extra';
 
 
 const H5PxApiSender = {};
@@ -15,15 +17,17 @@ H5PxApiSender.lrs = null;
  */
 H5PxApiSender.init = async () => {
     H5PxApiSender.setupLrs();
+    console.log("path",__dirname,fs.pathExistsSync(path.resolve(__dirname,'dist/frame.bundle.js')))
     const options = {
         id: URL.parse(location.href, true).query.activity_id,
-        frameJs: '../node_modules/h5p-standalone-fix/dist/frame.bundle.js',
-        frameCss: '../node_modules/h5p-standalone-fix/dist/styles/h5p.css'
+        frameJs: path.resolve(__dirname,'dist/frame.bundle.js'),
+        frameCss: path.resolve(__dirname,'dist/styles/h5p.css')
     },container = document.getElementById('h5p-container'),
     h5pStandAlone = await new H5P(container, container.getAttribute('data-workspace')|| 'workspace', options);
     h5pStandAlone.H5P.externalDispatcher.on('xAPI',  (event) => {
         H5PxApiSender.sendStatement(event)
     });
+    console.log(h5pStandAlone)
 }
 
 H5PxApiSender.setupLrs = () => {
@@ -57,10 +61,11 @@ H5PxApiSender.handleContextParent = (parents) => {
 H5PxApiSender.sendStatement = (event) => {
     if(H5PxApiSender.lrs && H5PxApiSender.params){
         const h5pStatement = event.data.statement, activityId = H5PxApiSender.params.activity_id,
-        hasContext = h5pStatement.context && h5pStatement.context.contextActivities,
-        hasParent = hasContext && h5pStatement.context.contextActivities.parent,
+        hasContextActivity = h5pStatement.context && h5pStatement.context.contextActivities,
+        hasParent = hasContextActivity && h5pStatement.context.contextActivities.parent,
         parent = hasParent ? h5pStatement.context.contextActivities.parent: {},
-        contextActivities = hasContext && hasParent ? {...h5pStatement.context.contextActivities}:{},
+        contextActivities = hasContextActivity && hasParent ? {...h5pStatement.context.contextActivities}:{},
+        context = h5pStatement.context ? h5pStatement.context:{},
         mObject = h5pStatement.object, subIdKey = 'http://h5p.org/x-api/h5p-subContentId',
         hasSubId = mObject.definition && mObject.definition.extensions && mObject.definition.extensions[subIdKey],
         statement = {
@@ -68,7 +73,7 @@ H5PxApiSender.sendStatement = (event) => {
             verb: h5pStatement.verb,
             object: {...mObject, id: hasSubId ? `${activityId}/${mObject.definition.extensions[subIdKey]}`:activityId},
             result: h5pStatement.result,
-            context: {...h5pStatement.context, registration: H5PxApiSender.params.registration,
+            context: {...context, registration: H5PxApiSender.params.registration,
                  contextActivities: {...contextActivities,parent: hasParent ?
                     H5PxApiSender.handleContextParent(parent): activityId}
                 },
@@ -90,7 +95,8 @@ H5PxApiSender.sendStatement = (event) => {
 
 
 //Listen for the document load ready and initialize H5PxApiSender
-document.addEventListener("DOMContentLoaded", () => { 
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("Event received loader completed") 
     H5PxApiSender.init()
 });
 
