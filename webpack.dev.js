@@ -1,4 +1,5 @@
-const merge = require('webpack-merge');
+const { merge } = require('webpack-merge');
+const webpack = require('webpack');
 const common = require('./webpack.common.js');
 
 module.exports = merge(common, {
@@ -11,4 +12,9 @@ module.exports = merge(common, {
   optimization: {
     minimize: false
   },
+  plugins: [
+    new webpack.ProvidePlugin({
+      process: 'process/browser'
+    })
+  ]
 });
