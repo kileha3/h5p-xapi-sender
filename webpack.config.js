@@ -1,3 +1,3 @@
-const dev = require('./webpack.dev.js');
+const common = require('./webpack.common.js');
 
-module.exports = dev;
+module.exports = common;
